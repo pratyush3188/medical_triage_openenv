@@ -5,6 +5,10 @@ from environment.env import MedicalTriageEnv
 app = FastAPI(title="Medical Triage Environment API")
 env = MedicalTriageEnv()
 
+@app.get("/")
+def root():
+    return {"message": "API is running"}
+
 @app.get("/health")
 def health():
     return {"status": "ok"}

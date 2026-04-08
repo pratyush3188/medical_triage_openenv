@@ -2,6 +2,7 @@ import os
 import re
 import json
 import time
+import math
 from datetime import datetime, timezone
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -24,6 +25,26 @@ MAX_TURNS = {
     "medium": 10,
     "hard": 15
 }
+
+EPS_SCORE = 1e-4  # ensures 4dp rounding won't hit 0.0/1.0
+
+def to_strict_unit_interval(x: float, eps: float = EPS_SCORE) -> float:
+    """
+    Force score into (0, 1) strictly (never 0.0 or 1.0),
+    and keep it safe even after rounding to 4 decimals.
+    """
+    try:
+        v = float(x)
+    except Exception:
+        v = 0.5
+
+    if not math.isfinite(v):
+        v = 0.5
+
+    v = max(eps, min(1.0 - eps, v))
+    v = round(v, 4)
+    v = max(eps, min(1.0 - eps, v))
+    return v
 
 def extract_json_from_response(text: str):
     if not text or not text.strip():
@@ -170,18 +191,18 @@ def run_task(env: MedicalTriageEnv, task_name: str, model: str):
         turns += 1
 
         if done and "score" in info:
-            final_score = float(info["score"])
+            final_score = to_strict_unit_interval(info["score"])
         elif done:
-            final_score = max(0.0, min(1.0, total_reward))
+            final_score = to_strict_unit_interval(total_reward)
 
         print(f'[STEP] {{"task": "{task_name}", "turn": {turns}, "action": {json.dumps(action)}, "reward": {round(reward, 4)}, "done": {str(done).lower()}}}\n')
 
     if not done and turns >= max_turns:
         print(f'[STEP] {{"task": "{task_name}", "turn": {turns}, "action": {{}}, "reward": -0.5, "done": true}}\n')
         total_reward -= 0.5
-        final_score = max(0.0, min(1.0, total_reward / max(turns, 1)))
+        final_score = to_strict_unit_interval(total_reward / max(turns, 1))
 
-    final_score = round(max(0.0, min(1.0, final_score)), 4)
+    final_score = to_strict_unit_interval(final_score)
 
     print(f'[END] {{"task": "{task_name}", "total_reward": {round(total_reward, 4)}, "turns": {turns}, "score": {final_score}}}')
     print(f"\n======== Task '{task_name.upper()}' Completed. Average Score Output: {final_score:.2f} ========\n")

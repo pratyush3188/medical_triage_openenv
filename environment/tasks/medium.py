@@ -1,6 +1,14 @@
 from typing import Dict, Any, List
 from ..models import Observation, Action, Vitals, AvailableResources
 
+EPS_SCORE = 1e-4  # keep safe after 4dp rounding: never 0.0000/1.0000
+
+def _strict_unit_interval(x: float, eps: float = EPS_SCORE) -> float:
+    x = float(x)
+    x = max(eps, min(1.0 - eps, x))
+    x = round(x, 4)
+    return max(eps, min(1.0 - eps, x))
+
 PATIENTS = [
     {
         "patient_id": "M1",
@@ -110,8 +118,8 @@ class MediumTask:
             else:
                 total += 0.0      # Too far off
         
-        final_score = round(total / max_possible, 4)
-        return max(0.0, min(1.0, final_score))
+        final_score = total / max_possible
+        return _strict_unit_interval(final_score)
 
     def step(self, action: Action):
         self.turn += 1

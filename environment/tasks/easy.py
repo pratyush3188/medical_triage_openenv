@@ -2,6 +2,14 @@ import random
 from typing import Dict, Any, List
 from ..models import Observation, Action, Vitals, AvailableResources
 
+EPS_SCORE = 1e-4  # keep safe after 4dp rounding: never 0.0000/1.0000
+
+def _strict_unit_interval(x: float, eps: float = EPS_SCORE) -> float:
+    x = float(x)
+    x = max(eps, min(1.0 - eps, x))
+    x = round(x, 4)
+    return max(eps, min(1.0 - eps, x))
+
 PATIENTS = [
     {
         "patient_id": "E1",
@@ -137,7 +145,10 @@ class EasyTask:
             msg = "Turn limit reached. Forced termination."
 
         obs = self.get_obs(msg)
-        return obs, reward, done, {"true_priority": self.patient["true_priority"], "score": reward}
+        # Map reward in [-0.5, 1.0] to score in [0, 1], then force into (0, 1).
+        raw_score = (reward + 0.5) / 1.5
+        score = _strict_unit_interval(raw_score)
+        return obs, reward, done, {"true_priority": self.patient["true_priority"], "score": score}
 
     def get_obs(self, msg=""):
         return Observation(

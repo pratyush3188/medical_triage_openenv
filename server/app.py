@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from typing import Dict, Any
+import uvicorn
 from environment.env import MedicalTriageEnv
 
 app = FastAPI(title="Medical Triage Environment API")
@@ -55,3 +56,10 @@ def reset_task(task_name: str):
         return obs.dict()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+def main():
+    """Entry point for the OpenEnv server."""
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=False)
+
+if __name__ == "__main__":
+    main()

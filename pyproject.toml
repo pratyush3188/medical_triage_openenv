@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "medical-triage-env"
+name = "medical-triage-space"
 version = "1.0.0"
 description = "Multi-turn ER triage environment where AI agents prioritize patients and allocate resources under constraints"
 readme = "README.md"
 authors = [{ name = "Hackathon Submission" }]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.104.0",
     "uvicorn>=0.24.0",
@@ -19,8 +19,12 @@ dependencies = [
     "pytest>=7.0.0",
     "httpx>=0.25.0",
     "python-dotenv>=1.0.0",
+    "openenv-core>=0.2.0"
 ]
 
+[project.scripts]
+server = "server.app:main"
+
 [tool.setuptools]
-packages = ["api", "environment"]
+packages = ["server", "environment"]
 include-package-data = true

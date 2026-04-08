@@ -1,0 +1,28 @@
+name: medical-triage-env
+version: "1.0.0"
+description: "Multi-turn ER triage environment where AI agents prioritize patients and allocate resources under constraints"
+author: "hackathon-submission"
+tags:
+  - openenv
+  - medical
+  - triage
+  - multi-turn
+  - resource-allocation
+observation_space:
+  type: object
+  description: "Patient vitals, complaints, available resources, and conversation history"
+action_space:
+  type: object
+  description: "Structured triage decisions with optional free-text reasoning"
+reward_range: [0.0, 1.0]
+tasks:
+  - name: easy
+    description: "Single patient triage classification"
+    difficulty: easy
+  - name: medium
+    description: "Multi-patient prioritization ranking"
+    difficulty: medium
+  - name: hard
+    description: "ER crisis resource allocation with conflicting symptoms"
+    difficulty: hard
+endpoint: http://localhost:7860

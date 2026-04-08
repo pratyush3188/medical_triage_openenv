@@ -1,0 +1,9 @@
+node_modules/
+.env
+*.log
+inference_log.txt
+output.txt
+__pycache__/
+.vscode/
+.idea/
+.DS_Store

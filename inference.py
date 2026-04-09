@@ -184,8 +184,15 @@ def run_task(env: MedicalTriageEnv, task_name: str, model: str):
 
     final_score = strict_open_unit_score(final_score)
 
-    print(f'[END] {{"task": "{task_name}", "total_reward": {round(total_reward, 4)}, "turns": {turns}, "score": {final_score}}}')
-    print(f"\n======== Task '{task_name.upper()}' Completed. Average Score Output: {final_score:.2f} ========\n")
+    # Use json.dumps for [END] so "score" is never rounded to 1.00 in stdout (validators parse logs).
+    print("[END] " + json.dumps({
+        "task": task_name,
+        "total_reward": round(total_reward, 4),
+        "turns": turns,
+        "score": final_score,
+    }, ensure_ascii=False))
+    # Never use :.2f here — 0.999 rounds to "1.00" and fails Scalar task validation.
+    print(f"\n======== Task '{task_name.upper()}' Completed. Average Score Output: {final_score:.6f} ========\n")
     return final_score
 
 def main():
@@ -202,12 +209,14 @@ def main():
     print("             BASELINE RESULTS              ")
     print("###########################################\n")
     for task in tasks:
-        print(f"Task -> {task.upper()}:\tscore={scores[task]:.2f}")
+        print(f"Task -> {task.upper()}:\tscore={scores[task]:.6f}")
 
     mean_score = sum(scores.values()) / len(scores) if scores else 0.0
     print("\n-------------------------------------------")
-    print(f"TOTAL AVERAGE MEAN:\tscore={mean_score:.2f}")
+    print(f"TOTAL AVERAGE MEAN:\tscore={mean_score:.6f}")
     print("-------------------------------------------\n")
+    # Authoritative one-line JSON for evaluators (strict (0,1) per task).
+    print("OPENENV_TASK_SCORES_JSON:" + json.dumps({t: scores[t] for t in tasks}, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()

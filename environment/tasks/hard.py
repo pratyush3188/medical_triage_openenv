@@ -1,13 +1,6 @@
 from typing import Dict, Any, List
 from ..models import Observation, Action, Vitals, AvailableResources
-
-EPS_SCORE = 1e-4  # keep safe after 4dp rounding: never 0.0000/1.0000
-
-def _strict_unit_interval(x: float, eps: float = EPS_SCORE) -> float:
-    x = float(x)
-    x = max(eps, min(1.0 - eps, x))
-    x = round(x, 4)
-    return max(eps, min(1.0 - eps, x))
+from ..score_range import strict_open_unit_score
 
 PATIENTS = [
     {
@@ -119,7 +112,7 @@ class HardTask:
         }
         
         if not self.allocations:
-            return _strict_unit_interval(0.0)
+            return strict_open_unit_score(0.0)
         
         total = 0.0
         max_score = len(GROUND_TRUTH)
@@ -141,7 +134,7 @@ class HardTask:
                     total += 0.0
         
         final_score = total / max_score
-        return _strict_unit_interval(final_score)
+        return strict_open_unit_score(final_score)
 
     def step(self, action: Action):
         self.turn += 1
@@ -202,7 +195,7 @@ class HardTask:
         if not done:
             return self.get_obs(), reward, done, {}
         else:
-            return self.get_final_obs(), reward, done, {"score": _strict_unit_interval(final_eval)}
+            return self.get_final_obs(), reward, done, {"score": strict_open_unit_score(final_eval)}
     
     def get_final_obs(self):
         idx = min(self.current_patient_index, len(self.patients) - 1)

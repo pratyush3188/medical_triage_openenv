@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from typing import Dict, Any
 import uvicorn
 from environment.env import MedicalTriageEnv
+from environment.score_range import strict_open_unit_score
 
 app = FastAPI(title="Medical Triage Environment API")
 env = MedicalTriageEnv()
@@ -26,6 +27,8 @@ def reset():
 def step(action: dict):
     try:
         obs, reward, done, info = env.step(action)
+        if isinstance(info, dict) and "score" in info:
+            info = {**info, "score": strict_open_unit_score(info["score"])}
         return {
             "observation": obs.dict(),
             "reward": reward,

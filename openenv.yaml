@@ -14,7 +14,8 @@ observation_space:
 action_space:
   type: object
   description: "Structured triage decisions with optional free-text reasoning"
-reward_range: [0.0, 1.0]
+# Open interval (0, 1): endpoints 0.0 and 1.0 are invalid for Scalar task validation.
+reward_range: [0.001, 0.999]
 tasks:
   - name: easy
     description: "Single patient triage classification"

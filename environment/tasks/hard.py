@@ -202,7 +202,7 @@ class HardTask:
         if not done:
             return self.get_obs(), reward, done, {}
         else:
-            return self.get_final_obs(), reward, done, {"score": final_eval}
+            return self.get_final_obs(), reward, done, {"score": _strict_unit_interval(final_eval)}
     
     def get_final_obs(self):
         idx = min(self.current_patient_index, len(self.patients) - 1)

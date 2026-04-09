@@ -156,15 +156,17 @@ class MediumTask:
             reward += final_score * 2
             self.message = f"All patients triaged. Ranking score: {final_score:.2f}"
             
-        elif self.turn >= 25: 
+        elif self.turn >= 25:
             done = True
+            # Must not leave final_score at 0.0 — Scalar rejects exactly 0.0 / 1.0.
+            final_score = self.grade()
             reward -= 2.0
             self.message = "Turn limit reached. Did not assign priority to all patients."
 
         if not done:
             return self.get_obs(), reward, done, {}
         else:
-            return self.get_final_obs(), reward, done, {"score": final_score}
+            return self.get_final_obs(), reward, done, {"score": _strict_unit_interval(final_score)}
 
     def get_final_obs(self):
         idx = min(self.current_patient_index, len(self.patients) - 1)

@@ -4,6 +4,6 @@ class BaseGrader(ABC):
     @abstractmethod
     def grade(self, history: list) -> float:
         """
-        Takes the history of turns/actions and evaluates the score between 0.0 and 1.0
+        Evaluate the score strictly between 0 and 1 (never exactly 0.0 or 1.0).
         """
         pass

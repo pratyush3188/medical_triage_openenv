@@ -138,7 +138,7 @@ class EasyTask:
             msg = "Turn limit reached. Forced termination."
 
         obs = self.get_obs(msg)
-        # Map reward in [-0.5, 1.0] to score in [0, 1], then force into (0, 1).
+        # Map reward in [-0.5, 1.0] to a linear [0,1] scale, then strict_open_unit_score → (0, 1).
         raw_score = (reward + 0.5) / 1.5
         score = strict_open_unit_score(raw_score)
         return obs, reward, done, {"true_priority": self.patient["true_priority"], "score": score}

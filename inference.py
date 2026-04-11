@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from openai import OpenAI
 from dotenv import load_dotenv
 from environment.env import MedicalTriageEnv
-from environment.score_range import strict_open_unit_score
+from environment.score_range import normalize_task_scores, strict_open_unit_score
 
 load_dotenv()  # Loads variables from a .env file if it exists
 
@@ -165,7 +165,8 @@ def run_task(env: MedicalTriageEnv, task_name: str, model: str):
         except Exception as e:
             reward = -0.5
             done = True
-            info = {"score": 0.0}
+            # Never put raw 0.0 in info — evaluators may parse step payloads; Scalar requires (0, 1).
+            info = {"score": strict_open_unit_score(0.0)}
 
         total_reward += reward
         turns += 1
@@ -208,15 +209,20 @@ def main():
     print("\n\n###########################################")
     print("             BASELINE RESULTS              ")
     print("###########################################\n")
+    strict_scores = normalize_task_scores(scores)
     for task in tasks:
-        print(f"Task -> {task.upper()}:\tscore={scores[task]:.6f}")
+        print(f"Task -> {task.upper()}:\tscore={strict_scores[task]:.6f}")
 
-    mean_score = sum(scores.values()) / len(scores) if scores else 0.0
+    mean_score = (
+        strict_open_unit_score(sum(strict_scores.values()) / len(strict_scores))
+        if strict_scores
+        else strict_open_unit_score(0.5)
+    )
     print("\n-------------------------------------------")
     print(f"TOTAL AVERAGE MEAN:\tscore={mean_score:.6f}")
     print("-------------------------------------------\n")
     # Authoritative one-line JSON for evaluators (strict (0,1) per task).
-    print("OPENENV_TASK_SCORES_JSON:" + json.dumps({t: scores[t] for t in tasks}, ensure_ascii=False))
+    print("OPENENV_TASK_SCORES_JSON:" + json.dumps(strict_scores, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()

@@ -56,7 +56,7 @@ Agents interact using a structured JSON schema.
 - **Focus**: Baseline clinical interpretation.
 - **Pool**: 10 Patients (`E1` - `E10`).
 - **Challenge**: Mapping vitals and complaints to one of four priority levels.
-- **Scoring**: Linear reward based on priority proximity (+1.0 for perfect match).
+- **Scoring**: Step rewards use priority proximity (up to **+1.0** on a perfect `assign_priority`). The **reported task score** is that reward mapped into the **open interval (0, 1)**—endpoints **0.0** and **1.0** are never emitted (see `environment/score_range.py` and `openenv.yaml`).
 
 ### 🟡 Task 2: Medium — Multi-Patient Prioritization
 - **Focus**: Concurrent patient management and ranking.
@@ -85,7 +85,7 @@ MODEL_NAME="meta-llama/Llama-3.3-70B-Instruct"
 ### 2. Local Setup
 ```bash
 pip install -r requirements.txt
-python -m uvicorn api.server:app --host 0.0.0.0 --port 7860
+python -m uvicorn server.app:app --host 0.0.0.0 --port 7860
 ```
 
 ### 3. Running Inference Baseline
@@ -110,12 +110,12 @@ The environment produces structured logs with specific tags for automated parsin
 
 - **`[START]`**: Emitted when a task begins. Contains metadata like task name, model, and timestamp.
 - **`[STEP]`**: Emitted after every environment step. Tracks turn number, agent action, reward, and completion status.
-- **`[END]`**: Emitted when a task finishes. Reports the final total reward, turns used, and the normalized task score (0.0 to 1.0).
+- **`[END]`**: Emitted when a task finishes. Reports the final total reward, turns used, and the **normalized task score**. Per Scalar / OpenEnv validation, each task score must be **strictly between 0 and 1** (exclusive): **0.0** and **1.0** are invalid. After normalization, values lie in a safe band such as **~0.001–0.999** (see `reward_range` in `openenv.yaml`).
 
 ---
 
 ## 📈 Scoring & Metrics
-The results of an evaluation run are summarized by a **Total Average Mean** score:
+The results of an evaluation run are summarized by a **Total Average Mean** score (also strictly inside **(0, 1)** when every per-task score is valid):
 $$\text{Mean Score} = \frac{\text{Easy Score} + \text{Medium Score} + \text{Hard Score}}{3}$$
 
 - **Accuracy**: Measured by the precision of priority/resource assignments.
@@ -125,6 +125,7 @@ $$\text{Mean Score} = \frac{\text{Easy Score} + \text{Medium Score} + \text{Hard
 ---
 
 ## 🛠️ Technical Notes
+- **Scalar task scores**: Reported scores are clamped with `strict_open_unit_score()` so validation never sees **0.0** or **1.0** (e.g. a “zero” grade becomes a small positive floor).
 - **Pydantic V2**: This project uses Pydantic V2. All models use `.model_dump()` for serialization to ensure future compatibility.
 - **Deterministic Grading**: Graders are designed to be deterministic—given the same action sequence, the score will always be identical.
 - **Multi-Strategy JSON Parser**: The baseline inference script uses a 4-level fallback strategy (Markdown stripping, Brace matching, Regex, and Header checks) to maximize successfully parsed LLM responses.

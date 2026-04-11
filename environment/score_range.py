@@ -6,6 +6,7 @@ We centralize normalization so graders, inference, and the HTTP server cannot dr
 from __future__ import annotations
 
 import math
+from typing import Any, Mapping
 
 # Wider than 1e-4 so float32 JSON round-trips and Python rounding cannot snap to 0.0 / 1.0
 _EPS = 1e-3
@@ -28,4 +29,14 @@ def strict_open_unit_score(value: object) -> float:
     # `round(x, 4)` can produce exactly 1.0 or 0.0 (e.g. round(0.99995, 4) == 1.0).
     v = round(v, 6)
     v = min(hi, max(lo, v))
-    return v
+    # Last-resort guard: binary float edge cases must not surface as 0.0 or 1.0
+    if v <= 0.0:
+        v = lo
+    elif v >= 1.0:
+        v = hi
+    return float(v)
+
+
+def normalize_task_scores(scores: Mapping[str, Any]) -> dict[str, float]:
+    """Apply strict_open_unit_score to every value (e.g. OPENENV_TASK_SCORES_JSON payloads)."""
+    return {str(k): strict_open_unit_score(v) for k, v in scores.items()}
